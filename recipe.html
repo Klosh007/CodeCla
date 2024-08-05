@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background: url('https://thumbs.dreamstime.com/b/different-spices-herbs-stone-table-top-view-ingredients-cooking-food-background-different-spices-herbs-black-120232209.jpg') no-repeat center center/cover;
+        }
+
+        header {
+           
+            color: #fff;
+            padding: 1rem 0;
+            text-align: center;
+        }
+
+        main {
+            padding: 2rem;
+            background: url('https://www.shutterstock.com/image-photo/baking-ingredients-placed-on-wooden-600nw-618089717.jpg') no-repeat center center/cover;
+            background-size: cover;
+        }
+
+        #recipe-form {
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 0.5rem;
+        }
+
+        input, textarea {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 0.7rem;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        #recipes {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .recipe {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 1rem;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .recipe img {
+            max-width: 100%;
+            border-radius: 5px;
+        }
+
+        .recipe h3 {
+            margin-top: 0;
+        }
+
+        .recipe-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+        }
+
+        .edit-button, .delete-button {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #333;
+            color: #fff;
+        }
+
+        .edit-button:hover, .delete-button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1><br>Recipe Book</br></h1>
+    </header>
+    <main>
+        <section id="recipe-form">
+            <h2>Add New Recipe</h2>
+            <form id="add-recipe-form">
+                <label for="recipe-name">Recipe Name:</label>
+                <input type="text" id="recipe-name" required>
+                
+                <label for="recipe-ingredients">Ingredients:</label>
+                <textarea id="recipe-ingredients" required></textarea>
+                
+                <label for="recipe-image">Image URL:</label>
+                <input type="url" id="recipe-image" required>
+                
+                <button type="submit">Add Recipe</button>
+            </form>
+        </section>
+        <section id="recipe-list">
+            <h2>Your Recipes</h2>
+            <div id="recipes"></div>
+        </section>
+    </main>
+    <script>
+        document.getElementById('add-recipe-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('recipe-name').value;
+            const ingredients = document.getElementById('recipe-ingredients').value;
+            const imageUrl = document.getElementById('recipe-image').value;
+            
+            const recipe = {
+                id: Date.now(),
+                name,
+                ingredients,
+                imageUrl
+            };
+            
+            addRecipeToLocalStorage(recipe);
+            displayRecipes();
+            
+            document.getElementById('add-recipe-form').reset();
+        });
+
+        function addRecipeToLocalStorage(recipe) {
+            let recipes = localStorage.getItem('recipes');
+            if (recipes === null) {
+                recipes = [];
+            } else {
+                recipes = JSON.parse(recipes);
+            }
+            recipes.push(recipe);
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+        }
+
+        function editRecipeInLocalStorage(updatedRecipe) {
+            let recipes = JSON.parse(localStorage.getItem('recipes'));
+            recipes = recipes.map(recipe => recipe.id === updatedRecipe.id ? updatedRecipe : recipe);
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+        }
+
+        function deleteRecipeFromLocalStorage(id) {
+            let recipes = JSON.parse(localStorage.getItem('recipes'));
+            recipes = recipes.filter(recipe => recipe.id !== id);
+            localStorage.setItem('recipes', JSON.stringify(recipes));
+        }
+
+        function displayRecipes() {
+            const recipes = JSON.parse(localStorage.getItem('recipes'));
+            const recipeList = document.getElementById('recipes');
+            recipeList.innerHTML = '';
+            
+            if (recipes !== null) {
+                recipes.forEach(recipe => {
+                    const recipeCard = document.createElement('div');
+                    recipeCard.classList.add('recipe');
+                    recipeCard.innerHTML = `
+                        <img src="${recipe.imageUrl}" alt="${recipe.name}">
+                        <h3>${recipe.name}</h3>
+                        <p>${recipe.ingredients}</p>
+                        <div class="recipe-buttons">
+                            <button class="edit-button" onclick="editRecipe(${recipe.id})">Edit</button>
+                            <button class="delete-button" onclick="deleteRecipe(${recipe.id})">Delete</button>
+                        </div>
+                    `;
+                    recipeList.appendChild(recipeCard);
+                });
+            }
+        }
+
+        function editRecipe(id) {
+            const recipes = JSON.parse(localStorage.getItem('recipes'));
+            const recipe = recipes.find(r => r.id === id);
+            
+            document.getElementById('recipe-name').value = recipe.name;
+            document.getElementById('recipe-ingredients').value = recipe.ingredients;
+            document.getElementById('recipe-image').value = recipe.imageUrl;
+            
+            document.getElementById('add-recipe-form').removeEventListener('submit', addRecipe);
+            document.getElementById('add-recipe-form').addEventListener('submit', function updateRecipe(e) {
+                e.preventDefault();
+                
+                recipe.name = document.getElementById('recipe-name').value;
+                recipe.ingredients = document.getElementById('recipe-ingredients').value;
+                recipe.imageUrl = document.getElementById('recipe-image').value;
+                
+                editRecipeInLocalStorage(recipe);
+                displayRecipes();
+                
+                document.getElementById('add-recipe-form').reset();
+                document.getElementById('add-recipe-form').removeEventListener('submit', updateRecipe);
+                document.getElementById('add-recipe-form').addEventListener('submit', addRecipe);
+            });
+        }
+
+        function deleteRecipe(id) {
+            deleteRecipeFromLocalStorage(id);
+            displayRecipes();
+        }
+
+        document.addEventListener('DOMContentLoaded', displayRecipes);
+    </script>
+</body>
+</html>
